@@ -1,0 +1,131 @@
+From bc5c83671b3888e774de51c223212ddc98e0deb5 Mon Sep 17 00:00:00 2001
+From: Tejas Adhikari <tejas.adhikari@somaiya.edu>
+Date: Tue, 11 May 2021 18:03:00 +0530
+Subject: [PATCH] Create Patch File
+
+---
+ src/App.tsx   | 29 +++++++++++++++++++++++++----
+ src/Graph.tsx | 26 ++++++++++++++++++++++++--
+ 2 files changed, 49 insertions(+), 6 deletions(-)
+
+diff --git a/src/App.tsx b/src/App.tsx
+index 0728518..175ec79 100755
+--- a/src/App.tsx
++++ b/src/App.tsx
+@@ -8,6 +8,9 @@ import './App.css';
+  */
+ interface IState {
+   data: ServerRespond[],
++  //First you’ll need to add the `showGraph` property in the IState interface defined in App.tsx. It should be of the type` boolean
++
++  showGraph: boolean,
+ }
+ 
+ /**
+@@ -22,6 +25,8 @@ class App extends Component<{}, IState> {
+       // data saves the server responds.
+       // We use this state to parse data down to the child element (Graph) as element property
+       data: [],
++      //Next, in the constructor of the App component, you should define that the initial state of the App not to show the graph yet. This is because we want the graph to show when the user clicks ‘Start Streaming Data’. That means you should set `showGraph` property of the App’s state to `false` in the constructor
++      showGraph: false,
+     };
+   }
+ 
+@@ -29,20 +34,36 @@ class App extends Component<{}, IState> {
+    * Render Graph react component with state.data parse as property data
+    */
+   renderGraph() {
+-    return (<Graph data={this.state.data}/>)
++     //To ensure that the graph doesn’t render until a user clicks the ‘Start Streaming’ button, you should also edit the`renderGraph` method of the App. In there, you must add a condition to only render the graph when the state’s `showGraph` property of the App’s state is `true`.
++    if(this.state.showGraph){      
++      
++      return (<Graph data={this.state.data}/>)
++    }
+   }
+ 
+   /**
+    * Get new data from server and update the state with the new data
+    */
+   getDataFromServer() {
+-    DataStreamer.getData((serverResponds: ServerRespond[]) => {
++    let x = 0;
++    const interval = setInterval(() => {
++      DataStreamer.getData((serverResponds: ServerRespond[]) => {
++        this.setState({
++           data: serverResponds,
++          showGraph:true,
++         });
++
++    });
++    x++;
++    if(x > 1000){
++      clearInterval(interval);
++    }
++  }, 100);
+       // Update the state by creating a new array of data that consists of
+       // Previous data in the state and the new data from server
+-      this.setState({ data: [...this.state.data, ...serverResponds] });
+-    });
+   }
+ 
++
+   /**
+    * Render the App react component
+    */
+diff --git a/src/Graph.tsx b/src/Graph.tsx
+index ec1430e..cd11ba1 100644
+--- a/src/Graph.tsx
++++ b/src/Graph.tsx
+@@ -13,8 +13,11 @@ interface IProps {
+ /**
+  * Perspective library adds load to HTMLElement prototype.
+  * This interface acts as a wrapper for Typescript compiler.
++ * First, you must enable the `PerspectiveViewerElement` to behave like an 
++   HTMLElement. To do this, you can extend the `HTMLElement` class from the 
++   `PerspectiveViewerElement` interface
+  */
+-interface PerspectiveViewerElement {
++interface PerspectiveViewerElement extends HTMLElement {
+   load: (table: Table) => void,
+ }
+ 
+@@ -32,7 +35,7 @@ class Graph extends Component<IProps, {}> {
+ 
+   componentDidMount() {
+     // Get element to attach the table from the DOM.
+-    const elem: PerspectiveViewerElement = document.getElementsByTagName('perspective-viewer')[0] as unknown as PerspectiveViewerElement;
++    const elem = document.getElementsByTagName('perspective-viewer')[0] as unknown as PerspectiveViewerElement;
+ 
+     const schema = {
+       stock: 'string',
+@@ -48,8 +51,27 @@ class Graph extends Component<IProps, {}> {
+       // Load the `table` in the `<perspective-viewer>` DOM reference.
+ 
+       // Add more Perspective configurations here.
++      
+       elem.load(this.table);
++      elem.setAttribute('view', 'y_line');  //‘view’ is the the kind of graph we wanted to visualize the data as. Initially, if you  remember this was the grid type. However, since we wanted a continuous line  graph to be the final outcome, the closest one would be y_line
++
++     
++      elem.setAttribute('column-pivots', '["stock"]'); //‘column-pivots’ is what will allow us to distinguish stock ABC with DEF. Hence we use ‘[“stock”]’ as its corresponding value here. By the way, we can use stock here because it’s also defined in the schema object. This accessibility goes for the rest of the other attributes we’ll discuss.
++
++      elem.setAttribute('row-pivots', '["timestamp"]'); //‘row-pivots’ takes care of our x-axis. This allows us to map each datapoint based on the timestamp it has. Without this, the x-axis is blank.
++
++      elem.setAttribute('columns','["top_ask_price"]'); //‘columns’ is what will allow us to only focus on a particular part of a stock’s data along the y-axis. Without this, the graph will plot different datapoints of a stock ie: top_ask_price, top_bid_price, stock, timestamp. For this instance we only care about top_ask_price
++      
++
++      elem.setAttribute('aggregates', `
++      {"stock": "distinct count",
++      "top_ask_price":"avg",
++      "top_bid_price": "avg",
++      "timestamp":"distinct count"}`)  // ‘aggregates’ is what will allow us to handle the duplicated data we observed earlier and consolidate them as just one data point. In our case we only want to consider a data point unique if it has a unique stock name and timestamp. Otherwise, if there are duplicates like what we had before, we will average out the top_bid_prices and the top_ask_prices of these ‘similar’ datapoints before treating them as one.
++    
++      
+     }
++   
+   }
+ 
+   componentDidUpdate() {
+-- 
+2.31.1.windows.1
+
