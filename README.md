@@ -35,5 +35,16 @@
     <br />
 
 </p>
+<!-- CONTACT -->
 
+## Contact
+
+Name - Tejas Adhikari\
+Email - tejas.adhikari@somaiya.edu / adhikari.tejas3@gmail.com\
+LinkedIN Profile- [![LinkedIn][linkedin-shield]][linkedin-url]
+
+Project Link: [https://github.com/Tejas-Adhikari/J.P.-Morgan-Chase-Software-Engineering-Virtual-Experience)
+
+[linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
+[linkedin-url]: https://www.linkedin.com/in/tejas-adhikari-4ba530168/
 
